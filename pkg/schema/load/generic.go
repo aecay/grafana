@@ -164,7 +164,7 @@ func removeDefaultHelper(inputdef cue.Value, input cue.Value) (cue.Value, bool, 
 	}
 	rv := rvInstance.Value()
 
-	fmt.Println("xxxxxxxxxxxxxxxxxxxxx", inputdef.IncompleteKind())
+	// fmt.Println("xxxxxxxxxxxxxxxxxxxxx", inputdef.IncompleteKind())
 	switch inputdef.IncompleteKind() {
 	case cue.StructKind:
 		// Get all fields including optional fields
@@ -179,7 +179,6 @@ func removeDefaultHelper(inputdef cue.Value, input cue.Value) (cue.Value, bool, 
 			if err != nil {
 				continue
 			}
-			fmt.Printf(">>>>> the pathhhhhhhhhhh        %+v          \n", iter.Value().Path())
 			if lv.Exists() {
 				re, isEqual, err := removeDefaultHelper(iter.Value(), lv)
 				if err == nil && !isEqual {
@@ -190,7 +189,6 @@ func removeDefaultHelper(inputdef cue.Value, input cue.Value) (cue.Value, bool, 
 		}
 		return rv, false, nil
 	case cue.ListKind:
-		fmt.Println("xxxxxxxxxxxxxxxxxxxxx")
 		val, _ := inputdef.Default()
 		err1 := input.Subsume(val)
 		err2 := val.Subsume(input)
@@ -198,33 +196,33 @@ func removeDefaultHelper(inputdef cue.Value, input cue.Value) (cue.Value, bool, 
 			return rv, true, nil
 		}
 
-		lable, _ := inputdef.Label()
+		// lable, _ := inputdef.Label()
 
-		// _, exi := inputdef.Elem()
-		// if !exi {
-		// 	return rv, true, nil
-		// }
+		ele := inputdef.LookupPath(cue.MakePath(cue.AnyIndex))
+		fmt.Println("xxxxxxxxxxxxxxxxxxxxx ", ele.IncompleteKind())
+		if ele.IncompleteKind() == cue.BottomKind {
+			return rv, true, nil
+		}
 
-		// iter, err := input.List()
-		// if err != nil {
-		// 	return rv, true, nil
-		// }
-		// for iter.Next() {
-		// fmt.Println("xxxxxxxxxxxxxxxxxxxxx", interval.IncompleteKind())
-		// 	// re, isEqual, err := removeDefaultHelper(ele, iter.Value())
-		// 	// if err == nil && !isEqual {
-		// 	// 	fmt.Println("I am filling the path with ", iter.Value().Path())
-		// 	// 	rv = append(rv, re)
-		// 	// }
-		// }
+		iter, err := input.List()
+		if err != nil {
+			return rv, true, nil
+		}
+		index := 0
+		for iter.Next() {
+			re, isEqual, err := removeDefaultHelper(ele, iter.Value())
+			if err == nil && !isEqual {
+				a, _ := re.String()
+				fmt.Println("<<<<<<<< hereeeeeeeeeeee", string(a))
+				rv = rv.FillPath(cue.MakePath(cue.Index(index)), re)
+				index++
+			}
+		}
 
-		rv = rv.FillPath(cue.MakePath(cue.Str(lable)), input)
+		// rv = rv.FillPath(cue.MakePath(cue.Str(lable)), rv)
 		return rv, false, nil
 	default:
 		val, _ := inputdef.Default()
-		// a, _ := val.String()
-		// b, _ := input.String()
-		// fmt.Println("<<<<<<<<<<<<<<<<< val: ", a, " <<<<<<<<<<< input: ", b, "equal result: ", val.Equals(input))
 		err1 := input.Subsume(val)
 		err2 := val.Subsume(input)
 		if val.IsConcrete() && err1 == nil && err2 == nil {
