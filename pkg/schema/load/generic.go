@@ -174,11 +174,11 @@ func removeDefaultHelper(inputdef cue.Value, input cue.Value) (cue.Value, bool, 
 		}
 		for iter.Next() {
 			lable, _ := iter.Value().Label()
-			Vinfo, err := input.FieldByName(lable, false)
+
+			lv := input.LookupPath(cue.MakePath(cue.Str(lable)))
 			if err != nil {
 				continue
 			}
-			lv := Vinfo.Value
 			fmt.Printf(">>>>> the pathhhhhhhhhhh        %+v          \n", iter.Value().Path())
 			if lv.Exists() {
 				re, isEqual, err := removeDefaultHelper(iter.Value(), lv)
@@ -218,7 +218,7 @@ func removeDefaultHelper(inputdef cue.Value, input cue.Value) (cue.Value, bool, 
 		// 	// }
 		// }
 
-		rv = rv.FillPath(cue.Path(cue.MakePath(cue.Str(lable))), input)
+		rv = rv.FillPath(cue.MakePath(cue.Str(lable)), input)
 		return rv, false, nil
 	default:
 		val, _ := inputdef.Default()
@@ -281,7 +281,7 @@ var terminalMigrationFunc = func(x interface{}) (cue.Value, schema.VersionedCueS
 // earlier schema) with a later schema.
 func implicitMigration(v cue.Value, next schema.VersionedCueSchema) migrationFunc {
 	return func(x interface{}) (cue.Value, schema.VersionedCueSchema, error) {
-		w := v.Fill(x)
+		w := v.FillPath(cue.Path{}, x)
 		// TODO is it possible that migration would be successful, but there
 		// still exists some error here? Need to better understand internal CUE
 		// erroring rules? seems like incomplete cue.Value may always an Err()?
